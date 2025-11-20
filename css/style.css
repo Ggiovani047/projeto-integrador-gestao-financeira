@@ -39,14 +39,8 @@ p.subtitle {
 /* Grid Layout */
 .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
     gap: 25px;
-}
-
-@media (max-width: 768px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Cards */
@@ -60,7 +54,7 @@ p.subtitle {
 }
 
 h2 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     color: var(--primary);
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 10px;
@@ -68,6 +62,8 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 /* Form Styles */
@@ -79,7 +75,8 @@ label {
     display: block;
     font-weight: 600;
     margin-bottom: 5px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #475569;
 }
 
 input {
@@ -92,9 +89,8 @@ input {
     transition: border-color 0.3s;
 }
 
-/* Estilo específico para inputs com máscara */
 input[inputmode="numeric"] {
-    text-align: right; /* Alinha valores monetários à direita */
+    text-align: right;
 }
 
 input:focus {
@@ -103,8 +99,8 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* Botão */
-.btn-calc {
+/* Botões */
+.botao-calcular {
     background-color: var(--primary);
     color: white;
     border: none;
@@ -116,81 +112,83 @@ input:focus {
     margin-top: 20px;
     font-weight: bold;
     transition: background 0.3s;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
 }
 
-.btn-calc:hover {
+.botao-calcular:hover {
     background-color: #1d4ed8;
+    transform: translateY(-1px);
 }
 
-/* Botão Pequeno (Auto Preencher) */
-.btn-sm {
-    background-color: var(--primary);
-    color: var(--bg);
-    border: none;
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    border-radius: 4px;
+.botao-pequeno {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    font-weight: 600;
 }
-.btn-sm:hover {
-    background-color: #1d42a9;
+.botao-pequeno:hover {
+    background-color: #bae6fd;
+    transform: translateY(-1px);
 }
 
 /* Results Area */
-.result-container {
+.container-resultados {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s, transform 0.5s;
-    display: none; /* Hidden by default */
+    display: none;
 }
 
-.result-container.show {
+.container-resultados.mostrar {
     opacity: 1;
     transform: translateY(0);
     display: grid;
 }
 
-.result-item {
+.item-resultado {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
 }
 
-.result-value {
+.valor-resultado {
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--secondary);
 }
 
-.highlight { color: var(--accent); }
-.warning { color: var(--error); }
+.destaque { color: var(--accent); }
+.aviso { color: var(--error); }
 
-.chart-container {
+.container-grafico {
     position: relative;
-    height: 300px;
+    height: 350px;
     width: 100%;
     margin-top: 20px;
 }
 
-/* Error Box Style */
-.error-box {
+.caixa-erro {
     background-color: #fef2f2;
     border: 1px solid #fee2e2;
     color: #991b1b;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 15px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: none;
 }
-.error-box ul {
-    margin: 5px 0 0 0;
-    padding-left: 20px;
-}
 
-.data-content {
-    /* Wrapper para esconder/mostrar conteúdo de resultados */
+.tooltip-informativo {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 4px;
+    font-style: italic;
 }

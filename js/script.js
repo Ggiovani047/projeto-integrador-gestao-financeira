@@ -1,308 +1,378 @@
-let myChart = null;
+let instanciaGrafico = null;
 
-// ---------------------------------------------------------
-// NOVA LÓGICA DE AUTO-PREENCHIMENTO
-// ---------------------------------------------------------
-function autoFillFromOp() {
-    // 1. Pegar valores unitários
-    const price = getVal('price');
-    const vc = getVal('vc');
-    const quantity = getVal('quantity');
+// --- FUNÇÕES DE AUTO-PREENCHIMENTO ---
 
-    if (price === null || vc === null || quantity === null) {
-        alert("Preencha Preço, Custo Variável e Quantidade na Seção 1 primeiro.");
+// 1. Auto-preencher Seção de Capital de Giro com base na Seção Operacional
+function preencherAutomaticamenteDadosOperacionais() {
+    const precoVenda = obterValorCampo('precoVendaUnitario');
+    const custoVariavel = obterValorCampo('custoVariavelUnitario');
+    const quantidade = obterValorCampo('quantidadeVendida');
+
+    if (precoVenda === null || custoVariavel === null || quantidade === null) {
+        alert("Por favor, preencha o Preço de Venda, Custo Variável e Quantidade na seção 'Dados Operacionais' primeiro.");
         return;
     }
 
-    // 2. Calcular totais
-    const totalRevenue = price * quantity;
-    const totalCogs = vc * quantity; // Estimativa: CMV ~= Custo Variável Total
+    const receitaTotalCalculada = precoVenda * quantidade;
+    const custoMercadoriasVendidasCalculado = custoVariavel * quantidade; 
 
-    // 3. Atualizar inputs visualmente com formatação
-    const revInput = document.getElementById('revenue');
-    revInput.value = (totalRevenue).toFixed(2).replace('.', ','); // Formato temporário
-    formatMoney(revInput); // Aplica a máscara visual R$
-
-    const cogsInput = document.getElementById('cogs');
-    cogsInput.value = (totalCogs).toFixed(2).replace('.', ',');
-    formatMoney(cogsInput);
+    definirValorCampo('receitaTotalAnual', receitaTotalCalculada);
+    definirValorCampo('custoMercadoriasVendidas', custoMercadoriasVendidasCalculado);
 }
 
-
-// ---------------------------------------------------------
-// LÓGICA DE MÁSCARA E TRATAMENTO DE VALORES
-// ---------------------------------------------------------
-
-// Aplica máscara de R$ enquanto digita
-function formatMoney(input) {
-    // Remove tudo que não é dígito
-    let value = input.value.replace(/\D/g, "");
+// 2. Estimar Seção Financeira com base em dados Operacionais e de Capital de Giro
+function estimarDadosFinanceiros() {
+    const estoque = obterValorCampo('estoqueMedio') || 0;
+    const contasReceber = obterValorCampo('contasReceberMedio') || 0;
+    const fornecedores = obterValorCampo('fornecedoresMedio') || 0;
     
-    if (value === "") {
-        // Se vazio, limpa
-        return;
+    // Calcular Lucro Operacional para sugerir Lucro Líquido
+    const precoVenda = obterValorCampo('precoVendaUnitario');
+    const custoVariavel = obterValorCampo('custoVariavelUnitario');
+    const custoFixo = obterValorCampo('custosFixosTotais');
+    const quantidade = obterValorCampo('quantidadeVendida');
+    
+    let lucroLiquidoEstimado = 0;
+    
+    // Tenta calcular o Lucro Operacional (EBIT) se possível
+    if (precoVenda !== null && custoVariavel !== null && custoFixo !== null && quantidade !== null) {
+        const margemContribuicaoUnitario = precoVenda - custoVariavel;
+        const lucroOperacional = (quantidade * margemContribuicaoUnitario) - custoFixo;
+        lucroLiquidoEstimado = lucroOperacional; // Sugere EBIT como base, usuário ajusta impostos
     }
 
-    // Converte para centavos e formata (Ex: 1500 -> 15.00)
-    // Usando toLocaleString para garantir o padrão BRL
-    const formatted = (parseFloat(value) / 100).toLocaleString("pt-BR", {
+    // Lógica de Estimativa Contábil
+    // Ativo Circulante mínimo = Estoque + Contas a Receber
+    const ativoCirculanteEstimado = estoque + contasReceber;
+    
+    // Passivo Circulante mínimo = Fornecedores
+    const passivoCirculanteEstimado = fornecedores;
+
+    // Ativo Total mínimo = Ativo Circulante (Assumindo zero Ativo Não Circulante inicialmente)
+    const ativoTotalEstimado = ativoCirculanteEstimado;
+
+    // Preenche apenas se o campo estiver vazio
+    if(!obterValorCampo('ativoCirculante')) definirValorCampo('ativoCirculante', ativoCirculanteEstimado);
+    if(!obterValorCampo('passivoCirculante')) definirValorCampo('passivoCirculante', passivoCirculanteEstimado);
+    if(!obterValorCampo('ativoTotal')) definirValorCampo('ativoTotal', ativoTotalEstimado); // Usuário deve corrigir adicionando Imobilizado
+    if(!obterValorCampo('lucroLiquido')) definirValorCampo('lucroLiquido', lucroLiquidoEstimado);
+    
+    // Patrimônio Líquido é Ativo - Passivo. 
+    if(!obterValorCampo('patrimonioLiquido')) {
+            const patrimonioLiquidoEstimado = ativoTotalEstimado - passivoCirculanteEstimado;
+            definirValorCampo('patrimonioLiquido', patrimonioLiquidoEstimado > 0 ? patrimonioLiquidoEstimado : 0);
+    }
+    
+    alert("Valores estimados com base nos dados anteriores.\n\nLEMBRETES TÉCNICOS:\n1. Adicione o saldo de 'Disponibilidades' (Caixa/Bancos) ao Ativo Circulante.\n2. Deduza 'Imposto de Renda' e 'Despesas Financeiras' para o Lucro Líquido real.\n3. Ajuste o Ativo Total somando o 'Ativo Não Circulante' (Imobilizado, Intangível).");
+}
+
+// --- FUNÇÕES AUXILIARES DE FORMATAÇÃO E LEITURA ---
+
+// Formata o campo de input visualmente enquanto o usuário digita
+function formatarMoedaAoDigitar(elementoInput) {
+    let valorTexto = elementoInput.value.replace(/\D/g, "");
+    if (valorTexto === "") return;
+    
+    const valorFormatado = (parseFloat(valorTexto) / 100).toLocaleString("pt-BR", {
         style: "currency",
         currency: "BRL"
     });
-
-    input.value = formatted;
+    elementoInput.value = valorFormatado;
 }
 
-// Utilitário atualizado para pegar valor limpo
-function getVal(id) {
-    let val = document.getElementById(id).value;
-    if (val === '' || val === null) return null;
+// Define valor numérico em um campo e aplica máscara
+function definirValorCampo(idElemento, valorNumerico) {
+    const elementoInput = document.getElementById(idElemento);
+    // Fixa 2 casas decimais e troca ponto por virgula para a função de máscara funcionar bem se fosse string
+    // Mas como usamos toLocaleString na formatação, vamos simular a entrada
+    elementoInput.value = valorNumerico.toFixed(2).replace('.', ',');
+    formatarMoedaAoDigitar(elementoInput);
+}
 
-    // Se for um campo de quantidade (type="number"), vem direto
-    // Se for texto (moeda), precisamos limpar a formatação
-    if (typeof val === 'string' && (val.includes('R$') || val.includes(',') || val.includes('.'))) {
-        // 1. Remove R$, espaços e pontos de milhar: "R$ 1.500,50" -> "1500,50"
-        // 2. Substitui a vírgula decimal por ponto: "1500,50" -> "1500.50"
-        val = val.replace(/[^\d,]/g, '').replace(',', '.');
+// Obtém o valor numérico limpo (float) de um input
+function obterValorCampo(idElemento) {
+    let valorTexto = document.getElementById(idElemento).value;
+    if (valorTexto === '' || valorTexto === null) return null;
+    
+    // Se tiver caracteres de moeda, limpa
+    if (typeof valorTexto === 'string' && (valorTexto.includes('R$') || valorTexto.includes(',') || valorTexto.includes('.'))) {
+        // Remove tudo que não é dígito ou vírgula
+        // Ex: R$ 1.500,00 -> 1500,00 -> 1500.00
+        valorTexto = valorTexto.replace(/[^\d,]/g, '').replace(',', '.');
     }
-
-    const parsed = parseFloat(val);
-    return isNaN(parsed) ? null : parsed;
+    
+    const valorNumerico = parseFloat(valorTexto);
+    return isNaN(valorNumerico) ? null : valorNumerico;
 }
 
-function formatCurrency(value) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+// Formata número float para string de moeda BRL para exibição em texto (spans)
+function formatarValorMonetario(valorNumerico) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorNumerico);
 }
 
-// ---------------------------------------------------------
-// LÓGICA ORIGINAL DE CÁLCULO (Mantida)
-// ---------------------------------------------------------
+// --- LÓGICA PRINCIPAL DE CÁLCULOS ---
 
-// Função Principal
-function processCalculations() {
-    // Mostrar a seção de resultados
-    const resultSection = document.getElementById('resultsSection');
-    resultSection.classList.add('show');
-    resultSection.style.display = 'grid';
-
-    // 1. Processar Bloco Operacional (Ponto de Equilíbrio, Lucro, etc)
-    processOperational();
-
-    // 2. Processar Bloco de Ciclos
-    processCycles();
+function processarTodosCalculosContabeis() {
+    document.getElementById('secaoResultados').classList.add('mostrar');
+    
+    processarIndicadoresOperacionais();
+    processarCiclosFinanceiros();
+    processarIndicadoresFinanceiros();
 }
 
-function processOperational() {
-    const price = getVal('price');
-    const vc = getVal('vc');
-    const fc = getVal('fc');
-    const quantity = getVal('quantity');
+function processarIndicadoresOperacionais() {
+    const precoVenda = obterValorCampo('precoVendaUnitario');
+    const custoVariavel = obterValorCampo('custoVariavelUnitario');
+    const custosFixos = obterValorCampo('custosFixosTotais');
+    const quantidade = obterValorCampo('quantidadeVendida');
 
-    const errorBox = document.getElementById('error-operational');
-    const contentBox = document.getElementById('content-operational');
-    const chartErrorBox = document.getElementById('error-chart');
-    const chartWrapper = document.getElementById('chart-wrapper');
+    const elementoErro = document.getElementById('caixaErroOperacional');
+    const elementoConteudo = document.getElementById('conteudoOperacional');
+    const elementoContainerGrafico = document.getElementById('containerGrafico');
 
-    // Verificar campos faltantes essenciais para Ponto de Equilibrio
-    let missing = [];
-    if (price === null) missing.push("Preço de Venda");
-    if (vc === null) missing.push("Custo Variável");
-    if (fc === null) missing.push("Custos Fixos");
+    let camposFaltantes = [];
+    if (precoVenda === null) camposFaltantes.push("Preço de Venda");
+    if (custoVariavel === null) camposFaltantes.push("Custo Variável");
+    if (custosFixos === null) camposFaltantes.push("Custos Fixos");
 
-    // Reseta visualização
-    errorBox.style.display = 'none';
-    errorBox.innerHTML = '';
-    contentBox.style.opacity = '1';
-    chartErrorBox.style.display = 'none';
-    chartWrapper.style.display = 'block';
+    // Resetar estado visual
+    elementoErro.style.display = 'none';
+    elementoConteudo.style.opacity = '1';
+    elementoContainerGrafico.style.display = 'block';
 
-    if (missing.length > 0) {
-        // Se faltam dados essenciais para o básico
-        errorBox.style.display = 'block';
-        errorBox.innerHTML = `<strong>Não foi possível calcular resultados operacionais.</strong><br>Faltam: <ul>${missing.map(m => `<li>${m}</li>`).join('')}</ul>`;
-        contentBox.style.opacity = '0.3'; // "Desabilita" visualmente
-        
-        // Também desabilita o gráfico
-        chartErrorBox.style.display = 'block';
-        chartErrorBox.innerText = "Gráfico indisponível devido à falta de dados operacionais.";
-        chartWrapper.style.display = 'none';
+    if (camposFaltantes.length > 0) {
+        elementoErro.style.display = 'block';
+        elementoErro.innerHTML = `Faltam dados essenciais: ${camposFaltantes.join(', ')}`;
+        elementoConteudo.style.opacity = '0.3';
+        elementoContainerGrafico.style.display = 'none';
         return; 
     }
 
-    // Cálculos Possíveis com Preço, CV e CF
-    const mcu = price - vc;
-    const mcPercent = (mcu / price) * 100;
-    const peQtd = fc / mcu;
-    const peVal = peQtd * price;
+    // Cálculos da Margem de Contribuição e Ponto de Equilíbrio
+    const margemContribuicaoUnitario = precoVenda - custoVariavel;
+    const margemContribuicaoPercentual = (margemContribuicaoUnitario / precoVenda) * 100;
+    
+    // Ponto de Equilíbrio Contábil (PEC)
+    const pontoEquilibrioQuantidade = custosFixos / margemContribuicaoUnitario;
+    const pontoEquilibrioValor = pontoEquilibrioQuantidade * precoVenda;
 
-    document.getElementById('res-mcu').innerText = formatCurrency(mcu);
-    document.getElementById('res-mc-percent').innerText = mcPercent.toFixed(2) + '%';
-    document.getElementById('res-pe-qtd').innerText = Math.ceil(peQtd) + ' un';
-    document.getElementById('res-pe-val').innerText = formatCurrency(peVal);
+    // Exibição
+    document.getElementById('resultadoMargemContribuicaoUnitario').innerText = formatarValorMonetario(margemContribuicaoUnitario);
+    document.getElementById('resultadoMargemContribuicaoPercentual').innerText = margemContribuicaoPercentual.toFixed(1) + '%';
+    document.getElementById('resultadoPontoEquilibrioQuantidade').innerText = Math.ceil(pontoEquilibrioQuantidade) + ' un';
+    document.getElementById('resultadoPontoEquilibrioValor').innerText = formatarValorMonetario(pontoEquilibrioValor);
 
-    // Cálculos que dependem da Quantidade
-    if (quantity !== null) {
-        const ebit = (quantity * mcu) - fc;
-        const totalMC = quantity * mcu;
-        let gao = ebit !== 0 ? (totalMC / ebit) : 0;
-
-        document.getElementById('res-gao').innerText = gao.toFixed(2) + 'x';
+    // Se houver quantidade vendida, calcula Alavancagem e Lucro
+    if (quantidade !== null) {
+        const lucroOperacional = (quantidade * margemContribuicaoUnitario) - custosFixos;
+        const margemContribuicaoTotal = quantidade * margemContribuicaoUnitario;
         
-        const profitEl = document.getElementById('res-profit');
-        profitEl.innerText = formatCurrency(ebit);
-        profitEl.className = ebit >= 0 ? 'result-value highlight' : 'result-value warning';
+        // Grau de Alavancagem Operacional (GAO) = Margem Contribuição Total / Lucro Operacional
+        let grauAlavancagemOperacional = lucroOperacional !== 0 ? (margemContribuicaoTotal / lucroOperacional) : 0;
+
+        document.getElementById('resultadoGrauAlavancagemOperacional').innerText = grauAlavancagemOperacional.toFixed(2) + 'x';
         
-        // Renderizar gráfico com quantidade atual
-        renderChart(price, vc, fc, quantity, peQtd);
+        const elementoLucro = document.getElementById('resultadoLucroOperacional');
+        elementoLucro.innerText = formatarValorMonetario(lucroOperacional);
+        elementoLucro.className = lucroOperacional >= 0 ? 'valor-resultado destaque' : 'valor-resultado aviso';
+        
+        renderizarGraficoPontoEquilibrio(precoVenda, custoVariavel, custosFixos, quantidade, pontoEquilibrioQuantidade);
     } else {
-        document.getElementById('res-gao').innerText = "Necessita Qtd";
-        document.getElementById('res-profit').innerText = "Necessita Qtd";
-        
-        // Renderizar gráfico sem linha de 'situação atual', apenas Break Even
-        renderChart(price, vc, fc, peQtd * 1.2, peQtd);
+        document.getElementById('resultadoGrauAlavancagemOperacional').innerText = "-";
+        document.getElementById('resultadoLucroOperacional').innerText = "-";
+        // Renderiza gráfico apenas com a projeção do ponto de equilibrio
+        renderizarGraficoPontoEquilibrio(precoVenda, custoVariavel, custosFixos, pontoEquilibrioQuantidade * 1.2, pontoEquilibrioQuantidade);
     }
 }
 
-function processCycles() {
-    const inventory = getVal('inventory');
-    const receivables = getVal('receivables');
-    const payables = getVal('payables');
-    const cogs = getVal('cogs');
-    const revenue = getVal('revenue');
-    const days = 365;
+function processarCiclosFinanceiros() {
+    const estoque = obterValorCampo('estoqueMedio');
+    const contasReceber = obterValorCampo('contasReceberMedio');
+    const fornecedores = obterValorCampo('fornecedoresMedio');
+    const custoMercadorias = obterValorCampo('custoMercadoriasVendidas');
+    const receitaTotal = obterValorCampo('receitaTotalAnual');
+    const diasNoAno = 365;
 
-    const errorBox = document.getElementById('error-cycles');
-    const contentBox = document.getElementById('content-cycles');
+    const elementoErro = document.getElementById('caixaErroCiclos');
+    const elementoConteudo = document.getElementById('conteudoCiclos');
     
-    let missing = [];
-    // Precisamos de Receita e CMV como base para qualquer ciclo
-    if (cogs === null) missing.push("CMV");
-    if (revenue === null) missing.push("Receita");
+    if (custoMercadorias === null || receitaTotal === null) {
+        elementoErro.style.display = 'block';
+        elementoErro.innerHTML = `Necessário informar CMV e Receita Total para calcular os prazos médios.`;
+        elementoConteudo.style.opacity = '0.3';
+        return;
+    } else {
+        elementoErro.style.display = 'none';
+        elementoConteudo.style.opacity = '1';
+    }
 
-    errorBox.style.display = 'none';
-    contentBox.style.opacity = '1';
+    let prazoMedioEstocagem = 0;
+    let prazoMedioRecebimento = 0;
+    let prazoMedioPagamento = 0;
+    
+    let possuiPME = false;
+    let possuiPMR = false;
+    let possuiPMP = false;
 
-    if (missing.length > 0) {
-        errorBox.style.display = 'block';
-        errorBox.innerHTML = `<strong>Dados base insuficientes.</strong><br>Faltam: ${missing.join(', ')}`;
-        contentBox.style.opacity = '0.3';
+    // PME = (Estoque / CMV) * 365
+    if (estoque !== null && custoMercadorias !== 0) {
+        prazoMedioEstocagem = (estoque / custoMercadorias) * diasNoAno;
+        document.getElementById('resultadoPrazoMedioEstocagem').innerText = Math.round(prazoMedioEstocagem) + ' dias';
+        possuiPME = true;
+    }
+
+    // PMR = (Contas a Receber / Receita) * 365
+    if (contasReceber !== null && receitaTotal !== 0) {
+        prazoMedioRecebimento = (contasReceber / receitaTotal) * diasNoAno;
+        document.getElementById('resultadoPrazoMedioRecebimento').innerText = Math.round(prazoMedioRecebimento) + ' dias';
+        possuiPMR = true;
+    }
+
+    // PMP = (Fornecedores / CMV) * 365 (Proxy usando CMV no lugar de Compras)
+    if (fornecedores !== null && custoMercadorias !== 0) {
+        prazoMedioPagamento = (fornecedores / custoMercadorias) * diasNoAno;
+        document.getElementById('resultadoPrazoMedioPagamento').innerText = Math.round(prazoMedioPagamento) + ' dias';
+        possuiPMP = true;
+    }
+
+    // Ciclo Operacional = PME + PMR
+    if (possuiPME && possuiPMR) {
+        const cicloOperacional = prazoMedioEstocagem + prazoMedioRecebimento;
+        document.getElementById('resultadoCicloOperacional').innerText = Math.round(cicloOperacional) + ' dias';
+    } else {
+        document.getElementById('resultadoCicloOperacional').innerText = "-";
+    }
+
+    // Ciclo de Conversão de Caixa (CCC) = Ciclo Operacional - PMP
+    if (possuiPME && possuiPMR && possuiPMP) {
+        const cicloConversaoCaixa = (prazoMedioEstocagem + prazoMedioRecebimento) - prazoMedioPagamento;
+        const elementoCCC = document.getElementById('resultadoCicloConversaoCaixa');
+        elementoCCC.innerText = Math.round(cicloConversaoCaixa) + ' dias';
+        // CCC negativo é bom (financiado pelos fornecedores), positivo exige capital de giro
+        elementoCCC.className = cicloConversaoCaixa <= 0 ? 'valor-resultado destaque' : 'valor-resultado aviso';
+    }
+}
+
+function processarIndicadoresFinanceiros() {
+    const ativoCirculante = obterValorCampo('ativoCirculante');
+    const passivoCirculante = obterValorCampo('passivoCirculante');
+    const estoque = obterValorCampo('estoqueMedio') || 0;
+    const lucroLiquido = obterValorCampo('lucroLiquido');
+    const receitaTotal = obterValorCampo('receitaTotalAnual');
+    const patrimonioLiquido = obterValorCampo('patrimonioLiquido');
+    const ativoTotal = obterValorCampo('ativoTotal');
+
+    const elementoErro = document.getElementById('caixaErroFinanceiro');
+    const elementoConteudo = document.getElementById('conteudoFinanceiro');
+
+    // Validação mínima para Liquidez
+    if (ativoCirculante === null || passivoCirculante === null) {
+        elementoErro.style.display = 'block';
+        elementoErro.innerHTML = "Preencha Ativo Circulante e Passivo Circulante para calcular liquidez.";
+        elementoConteudo.style.opacity = '0.3';
         return;
     }
 
-    // Cálculo Individual (Permissivo)
-    // Se faltar estoque, PME = 0 ou traço, mas calcula os outros
-    
-    let pme = 0, pmr = 0, pmp = 0;
-    let hasPME = false, hasPMR = false, hasPMP = false;
+    elementoErro.style.display = 'none';
+    elementoConteudo.style.opacity = '1';
 
-    // PME
-    if (inventory !== null && cogs !== 0) {
-        pme = (inventory / cogs) * days;
-        document.getElementById('res-pme').innerText = Math.round(pme) + ' dias';
-        hasPME = true;
-    } else {
-        document.getElementById('res-pme').innerText = "-";
+    // 1. Índices de Liquidez
+    if(passivoCirculante !== 0) {
+        const liquidezCorrente = ativoCirculante / passivoCirculante;
+        const liquidezSeca = (ativoCirculante - estoque) / passivoCirculante;
+        
+        const elementoLiqCorrente = document.getElementById('resultadoLiquidezCorrente');
+        elementoLiqCorrente.innerText = liquidezCorrente.toFixed(2);
+        elementoLiqCorrente.className = liquidezCorrente >= 1 ? 'valor-resultado destaque' : 'valor-resultado aviso';
+
+        document.getElementById('resultadoLiquidezSeca').innerText = liquidezSeca.toFixed(2);
     }
 
-    // PMR
-    if (receivables !== null && revenue !== 0) {
-        pmr = (receivables / revenue) * days;
-        document.getElementById('res-pmr').innerText = Math.round(pmr) + ' dias';
-        hasPMR = true;
-    } else {
-        document.getElementById('res-pmr').innerText = "-";
+    // 2. Índices de Rentabilidade
+    // Margem Líquida = Lucro Líquido / Receita Total
+    if(lucroLiquido !== null && receitaTotal !== null && receitaTotal !== 0) {
+        const margemLiquida = (lucroLiquido / receitaTotal) * 100;
+        const elementoMargemLiq = document.getElementById('resultadoMargemLiquida');
+        elementoMargemLiq.innerText = margemLiquida.toFixed(1) + '%';
+        elementoMargemLiq.className = margemLiquida > 0 ? 'valor-resultado' : 'valor-resultado aviso';
     }
 
-    // PMP
-    if (payables !== null && cogs !== 0) {
-        pmp = (payables / cogs) * days;
-        document.getElementById('res-pmp').innerText = Math.round(pmp) + ' dias';
-        hasPMP = true;
+    // ROE (Retorno sobre Patrimônio Líquido) = Lucro Líquido / PL
+    if(lucroLiquido !== null && patrimonioLiquido !== null && patrimonioLiquido !== 0) {
+        const retornoSobrePatrimonio = (lucroLiquido / patrimonioLiquido) * 100;
+        document.getElementById('resultadoRetornoSobrePatrimonio').innerText = retornoSobrePatrimonio.toFixed(1) + '%';
     } else {
-        document.getElementById('res-pmp').innerText = "-";
+            document.getElementById('resultadoRetornoSobrePatrimonio').innerText = "-";
     }
 
-    // Ciclos Compostos
-    if (hasPME && hasPMR) {
-        document.getElementById('res-co').innerText = Math.round(pme + pmr) + ' dias';
+    // ROA (Retorno sobre Ativo) = Lucro Líquido / Ativo Total
+    if(lucroLiquido !== null && ativoTotal !== null && ativoTotal !== 0) {
+        const retornoSobreAtivo = (lucroLiquido / ativoTotal) * 100;
+        document.getElementById('resultadoRetornoSobreAtivo').innerText = retornoSobreAtivo.toFixed(1) + '%';
     } else {
-        document.getElementById('res-co').innerText = "Faltam dados";
-    }
-
-    if (hasPME && hasPMR && hasPMP) {
-        const ccc = (pme + pmr) - pmp;
-        const cccEl = document.getElementById('res-ccc');
-        cccEl.innerText = Math.round(ccc) + ' dias';
-        cccEl.className = ccc <= 0 ? 'result-value highlight' : 'result-value warning';
-    } else {
-        document.getElementById('res-ccc').innerText = "Faltam dados";
+            document.getElementById('resultadoRetornoSobreAtivo').innerText = "-";
     }
 }
 
-function renderChart(price, vc, fc, limitQtd, breakEvenQtd) {
-    const ctx = document.getElementById('beChart').getContext('2d');
+function renderizarGraficoPontoEquilibrio(precoVenda, custoVariavel, custosFixos, quantidadeLimite, quantidadePontoEquilibrio) {
+    const contextoCanvas = document.getElementById('graficoPontoEquilibrio').getContext('2d');
     
-    // Definir range do gráfico
-    const maxQtd = Math.max(limitQtd, breakEvenQtd) * 1.5;
-    const step = maxQtd / 15; // mais pontos para suavidade
+    // Define o limite do eixo X (1.5x o maior valor entre o PE e a quantidade atual)
+    const quantidadeMaximaGrafico = Math.max(quantidadeLimite, quantidadePontoEquilibrio) * 1.5;
+    const passoGrafico = quantidadeMaximaGrafico / 15; 
     
-    let labels = [];
-    let totalCostsData = [];
-    let revenueData = [];
+    let rotulosEixoX = [];
+    let dadosCustosTotais = [];
+    let dadosReceitaTotal = [];
 
-    for(let i = 0; i <= maxQtd; i += step) {
-        let q = Math.round(i);
-        labels.push(q);
-        revenueData.push(q * price);
-        totalCostsData.push(fc + (q * vc));
+    for(let i = 0; i <= quantidadeMaximaGrafico; i += passoGrafico) {
+        let quantidadeAtual = Math.round(i);
+        rotulosEixoX.push(quantidadeAtual);
+        dadosReceitaTotal.push(quantidadeAtual * precoVenda);
+        dadosCustosTotais.push(custosFixos + (quantidadeAtual * custoVariavel));
     }
 
-    if(myChart) {
-        myChart.destroy();
-    }
+    if(instanciaGrafico) instanciaGrafico.destroy();
 
-    myChart = new Chart(ctx, {
+    instanciaGrafico = new Chart(contextoCanvas, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: rotulosEixoX,
             datasets: [
                 {
                     label: 'Receita Total',
-                    data: revenueData,
+                    data: dadosReceitaTotal,
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)',
                     borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
+                    fill: true,
+                    tension: 0.2
                 },
                 {
                     label: 'Custos Totais',
-                    data: totalCostsData,
+                    data: dadosCustosTotais,
                     borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
                     borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
+                    fill: true,
+                    tension: 0.2
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) label += ': ';
-                            if (context.parsed.y !== null) {
-                                label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                        label: function(contexto) {
+                            let rotulo = contexto.dataset.label || '';
+                            if (rotulo) rotulo += ': ';
+                            if (contexto.parsed.y !== null) {
+                                rotulo += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contexto.parsed.y);
                             }
-                            return label;
+                            return rotulo;
                         }
                     }
                 }
@@ -311,9 +381,7 @@ function renderChart(price, vc, fc, limitQtd, breakEvenQtd) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value) {
-                            return 'R$ ' + value / 1000 + 'k';
-                        }
+                        callback: function(valor) { return 'R$ ' + (valor/1000).toFixed(0) + 'k'; }
                     }
                 }
             }

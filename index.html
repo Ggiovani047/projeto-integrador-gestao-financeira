@@ -12,147 +12,206 @@
 <div class="container">
     <header>
         <h1>Dashboard de Gestão Financeira</h1>
-        <p class="subtitle">Cálculo Modular de Ciclos, Ponto de Equilíbrio e Alavancagem</p>
+        <p class="subtitle">Análise Integrada: Operacional, Ciclos e Indicadores Financeiros</p>
     </header>
 
-    <form id="financialForm">
+    <form id="formularioFinanceiro">
         <div class="main-grid">
-            <!-- Card Inputs Operacionais -->
+            <!-- Card 1: Inputs Operacionais -->
             <div class="card">
-                <h2>1. Dados Unitários e Custos</h2>
+                <h2>1. Dados Operacionais</h2>
                 <div class="form-group">
-                    <label>Preço de Venda por Unidade</label>
-                    <input type="text" id="price" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <label>Preço de Venda (Unitário)</label>
+                    <input type="text" id="precoVendaUnitario" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custo/Despesa Variável por Unidade</label>
-                    <input type="text" id="vc" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <label>Custo Variável (Unitário)</label>
+                    <input type="text" id="custoVariavelUnitario" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custos e Despesas Fixas Totais</label>
-                    <input type="text" id="fc" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <label>Custos Fixos Totais</label>
+                    <input type="text" id="custosFixosTotais" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Quantidade Vendida Atual (Unidades)</label>
-                    <!-- Mantido como number sem máscara -->
-                    <input type="number" id="quantity" placeholder="Ex: 500">
+                    <label>Quantidade Vendida</label>
+                    <input type="number" id="quantidadeVendida" placeholder="Ex: 500">
                 </div>
             </div>
 
-            <!-- Card Inputs Capital de Giro -->
+            <!-- Card 2: Inputs Capital de Giro -->
             <div class="card">
                 <h2>
-                    2. Dados de Capital de Giro
-                    <button type="button" onclick="autoFillFromOp()" class="btn-sm" title="Calcula CMV e Receita baseado nos dados da seção 1">
+                    2. Capital de Giro
+                    <button type="button" onclick="preencherAutomaticamenteDadosOperacionais()" class="botao-pequeno" title="Calcula CMV e Receita baseado na Seção 1">
                         Auto-preencher
                     </button>
                 </h2>
                 <div class="form-group">
                     <label>Estoque Médio</label>
-                    <input type="text" id="inventory" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <input type="text" id="estoqueMedio" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Contas a Receber Médio</label>
-                    <input type="text" id="receivables" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <label>Contas a Receber (Médio)</label>
+                    <input type="text" id="contasReceberMedio" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Fornecedores Médio</label>
-                    <input type="text" id="payables" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
+                    <label>Fornecedores (Médio)</label>
+                    <input type="text" id="fornecedoresMedio" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custo das Mercadorias Vendidas - CMV</label>
-                    <input type="text" id="cogs" inputmode="numeric" oninput="formatMoney(this)" placeholder="Automático ou Manual">
+                    <label>CMV (Anual)</label>
+                    <input type="text" id="custoMercadoriasVendidas" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Receita de Vendas Total</label>
-                    <input type="text" id="revenue" inputmode="numeric" oninput="formatMoney(this)" placeholder="Automático ou Manual">
+                    <label>Receita Total (Anual)</label>
+                    <input type="text" id="receitaTotalAnual" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                </div>
+            </div>
+
+            <!-- Card 3: Inputs Balanço (OCUPA 2 COLUNAS) -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>
+                    3. Balanço & Resultados
+                    <button type="button" onclick="estimarDadosFinanceiros()" class="botao-pequeno" title="Estima valores com base nos dados anteriores">
+                        Estimar
+                    </button>
+                </h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label>Ativo Circulante (Total)</label>
+                        <input type="text" id="ativoCirculante" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                        <div class="tooltip-informativo">Sugerido: Estoque + Recebíveis + Caixa</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Passivo Circulante (Total)</label>
+                        <input type="text" id="passivoCirculante" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                        <div class="tooltip-informativo">Sugerido: Fornecedores + Curto Prazo</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ativo Total</label>
+                        <input type="text" id="ativoTotal" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Patrimônio Líquido</label>
+                        <input type="text" id="patrimonioLiquido" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Lucro Líquido (Final)</label>
+                        <input type="text" id="lucroLiquido" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
+                        <div class="tooltip-informativo">Sugerido: Lucro Op. - Impostos</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <button type="button" onclick="processCalculations()" class="btn-calc">Calcular Indicadores Disponíveis</button>
+        <button type="button" onclick="processarTodosCalculosContabeis()" class="botao-calcular">Gerar Dashboard Completo</button>
     </form>
 
     <hr style="margin: 40px 0; border-color: #e2e8f0;">
 
-    <!-- Seção de Resultados (Inicialmente oculta) -->
-    <div class="main-grid result-container" id="resultsSection">
+    <!-- Seção de Resultados -->
+    <div class="main-grid container-resultados" id="secaoResultados">
         
-        <!-- Card Resultados Operacionais -->
+        <!-- Resultado 1: Operacional -->
         <div class="card">
-            <h2>Indicadores de Resultado</h2>
-            
-            <!-- Caixa de erro específica -->
-            <div id="error-operational" class="error-box"></div>
-            
-            <div id="content-operational" class="data-content">
-                <div class="result-item">
-                    <span>Margem de Contribuição (Unitária):</span>
-                    <span class="result-value highlight" id="res-mcu">-</span>
+            <h2>Resultado Operacional</h2>
+            <div id="caixaErroOperacional" class="caixa-erro"></div>
+            <div id="conteudoOperacional" class="conteudo-dados">
+                <div class="item-resultado">
+                    <span>Margem de Contribuição (Unit.):</span>
+                    <span class="valor-resultado destaque" id="resultadoMargemContribuicaoUnitario">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Margem de Contribuição (%):</span>
-                    <span class="result-value" id="res-mc-percent">-</span>
+                <div class="item-resultado">
+                    <span>Margem Contribuição (%):</span>
+                    <span class="valor-resultado" id="resultadoMargemContribuicaoPercentual">-</span>
                 </div>
-                <div class="result-item">
+                <div class="item-resultado">
                     <span>Ponto de Equilíbrio (Qtd):</span>
-                    <span class="result-value" id="res-pe-qtd">-</span>
+                    <span class="valor-resultado" id="resultadoPontoEquilibrioQuantidade">-</span>
                 </div>
-                <div class="result-item">
+                <div class="item-resultado">
                     <span>Ponto de Equilíbrio (Valor):</span>
-                    <span class="result-value" id="res-pe-val">-</span>
+                    <span class="valor-resultado" id="resultadoPontoEquilibrioValor">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Grau de Alavancagem (GAO):</span>
-                    <span class="result-value" id="res-gao">-</span>
+                <div class="item-resultado">
+                    <span>Alavancagem (GAO):</span>
+                    <span class="valor-resultado" id="resultadoGrauAlavancagemOperacional">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Análise Marginal (Lucro Atual):</span>
-                    <span class="result-value highlight" id="res-profit">-</span>
+                <div class="item-resultado">
+                    <span>Lucro Operacional (EBIT):</span>
+                    <span class="valor-resultado destaque" id="resultadoLucroOperacional">-</span>
                 </div>
             </div>
         </div>
 
-        <!-- Card Resultados Ciclos -->
+        <!-- Resultado 2: Ciclos -->
         <div class="card">
-            <h2>Indicadores de Ciclos (Prazos)</h2>
-            
-            <!-- Caixa de erro específica -->
-            <div id="error-cycles" class="error-box"></div>
-
-            <div id="content-cycles" class="data-content">
-                <div class="result-item">
-                    <span>Prazo Médio de Estoque (PME):</span>
-                    <span class="result-value" id="res-pme">-</span>
+            <h2>Prazos e Ciclos</h2>
+            <div id="caixaErroCiclos" class="caixa-erro"></div>
+            <div id="conteudoCiclos" class="conteudo-dados">
+                <div class="item-resultado">
+                    <span>Prazo Médio Estoque:</span>
+                    <span class="valor-resultado" id="resultadoPrazoMedioEstocagem">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Prazo Médio de Recebimento (PMR):</span>
-                    <span class="result-value" id="res-pmr">-</span>
+                <div class="item-resultado">
+                    <span>Prazo Médio Recebim.:</span>
+                    <span class="valor-resultado" id="resultadoPrazoMedioRecebimento">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Prazo Médio de Pagamento (PMP):</span>
-                    <span class="result-value" id="res-pmp">-</span>
+                <div class="item-resultado">
+                    <span>Prazo Médio Pagto:</span>
+                    <span class="valor-resultado" id="resultadoPrazoMedioPagamento">-</span>
                 </div>
-                <div class="result-item" style="border-top: 2px dashed #cbd5e1; margin-top:10px;">
+                <div class="item-resultado" style="border-top: 2px dashed #cbd5e1; margin-top:10px;">
                     <span>Ciclo Operacional:</span>
-                    <span class="result-value" id="res-co">-</span>
+                    <span class="valor-resultado" id="resultadoCicloOperacional">-</span>
                 </div>
-                <div class="result-item">
-                    <span>Ciclo de Conversão de Caixa (CCC):</span>
-                    <span class="result-value highlight" id="res-ccc">-</span>
+                <div class="item-resultado">
+                    <span>Ciclo de Conversão de Caixa:</span>
+                    <span class="valor-resultado destaque" id="resultadoCicloConversaoCaixa">-</span>
                 </div>
-                <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
-                    *Cálculos baseados no ano comercial de 365 dias.
-                </p>
+            </div>
+        </div>
+
+        <!-- Resultado 3: Indicadores Financeiros -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>Indicadores Financeiros</h2>
+            <div id="caixaErroFinanceiro" class="caixa-erro"></div>
+            <div id="conteudoFinanceiro" class="conteudo-dados" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div>
+                    <div class="item-resultado">
+                        <span title="Ativo Circulante / Passivo Circulante">Liquidez Corrente:</span>
+                        <span class="valor-resultado" id="resultadoLiquidezCorrente">-</span>
+                    </div>
+                    <div class="item-resultado">
+                        <span title="(Ativo Circulante - Estoque) / Passivo Circulante">Liquidez Seca:</span>
+                        <span class="valor-resultado" id="resultadoLiquidezSeca">-</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="item-resultado">
+                        <span title="Lucro Líquido / Receita Total">Margem Líquida:</span>
+                        <span class="valor-resultado" id="resultadoMargemLiquida">-</span>
+                    </div>
+                    <div class="item-resultado">
+                        <span title="Lucro Líquido / Patrimônio Líquido">ROE (Retorno s/ PL):</span>
+                        <span class="valor-resultado destaque" id="resultadoRetornoSobrePatrimonio">-</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="item-resultado">
+                        <span title="Lucro Líquido / Ativo Total">ROA (Retorno s/ Ativo):</span>
+                        <span class="valor-resultado" id="resultadoRetornoSobreAtivo">-</span>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <!-- Card Gráfico -->
+        <!-- Gráfico -->
         <div class="card" style="grid-column: 1 / -1;">
             <h2>Análise Gráfica: Ponto de Equilíbrio</h2>
-            <div id="error-chart" class="error-box"></div>
-            <div class="chart-container" id="chart-wrapper">
-                <canvas id="beChart"></canvas>
+            <div id="caixaErroGrafico" class="caixa-erro"></div>
+            <div class="container-grafico" id="containerGrafico">
+                <canvas id="graficoPontoEquilibrio"></canvas>
             </div>
         </div>
     </div>
