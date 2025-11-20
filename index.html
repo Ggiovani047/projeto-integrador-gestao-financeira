@@ -5,446 +5,160 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Análise Financeira & Contábil</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #1e293b;
-            --accent: #10b981;
-            --bg: #f3f4f6;
-            --card-bg: #ffffff;
-            --text: #334155;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            color: var(--secondary);
-            margin-bottom: 10px;
-        }
-
-        p.subtitle {
-            color: #64748b;
-        }
-
-        /* Grid Layout */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-        }
-
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Cards */
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            font-size: 1.25rem;
-            color: var(--primary);
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .btn-calc {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        .btn-calc:hover {
-            background-color: #1d4ed8;
-        }
-
-        /* Results Area */
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .result-value {
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--secondary);
-        }
-
-        .highlight {
-            color: var(--accent);
-        }
-        
-        .warning {
-            color: #ef4444;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
     <header>
         <h1>Dashboard de Gestão Financeira</h1>
-        <p class="subtitle">Cálculo de Ciclos, Ponto de Equilíbrio e Alavancagem</p>
+        <p class="subtitle">Cálculo Modular de Ciclos, Ponto de Equilíbrio e Alavancagem</p>
     </header>
 
-    <form id="financialForm" onsubmit="calculateAll(event)">
+    <form id="financialForm">
         <div class="main-grid">
+            <!-- Card Inputs Operacionais -->
             <div class="card">
                 <h2>1. Dados Unitários e Custos</h2>
                 <div class="form-group">
-                    <label>Preço de Venda por Unidade (R$)</label>
-                    <input type="number" id="price" step="0.01" required placeholder="Ex: 150.00">
+                    <label>Preço de Venda por Unidade</label>
+                    <input type="text" id="price" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custo/Despesa Variável por Unidade (R$)</label>
-                    <input type="number" id="vc" step="0.01" required placeholder="Ex: 80.00">
+                    <label>Custo/Despesa Variável por Unidade</label>
+                    <input type="text" id="vc" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custos e Despesas Fixas Totais (R$)</label>
-                    <input type="number" id="fc" step="0.01" required placeholder="Ex: 20000.00">
+                    <label>Custos e Despesas Fixas Totais</label>
+                    <input type="text" id="fc" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
                     <label>Quantidade Vendida Atual (Unidades)</label>
-                    <input type="number" id="quantity" required placeholder="Ex: 500">
+                    <!-- Mantido como number sem máscara -->
+                    <input type="number" id="quantity" placeholder="Ex: 500">
                 </div>
             </div>
 
+            <!-- Card Inputs Capital de Giro -->
             <div class="card">
-                <h2>2. Dados de Capital de Giro (Anual)</h2>
+                <h2>
+                    2. Dados de Capital de Giro
+                    <button type="button" onclick="autoFillFromOp()" class="btn-sm" title="Calcula CMV e Receita baseado nos dados da seção 1">
+                        Auto-preencher
+                    </button>
+                </h2>
                 <div class="form-group">
-                    <label>Estoque Médio (R$)</label>
-                    <input type="number" id="inventory" step="0.01" required placeholder="Valor médio no ano">
+                    <label>Estoque Médio</label>
+                    <input type="text" id="inventory" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Contas a Receber Médio (R$)</label>
-                    <input type="number" id="receivables" step="0.01" required placeholder="Valor médio a receber">
+                    <label>Contas a Receber Médio</label>
+                    <input type="text" id="receivables" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Fornecedores Médio (R$)</label>
-                    <input type="number" id="payables" step="0.01" required placeholder="Valor médio a pagar">
+                    <label>Fornecedores Médio</label>
+                    <input type="text" id="payables" inputmode="numeric" oninput="formatMoney(this)" placeholder="R$ 0,00">
                 </div>
                 <div class="form-group">
-                    <label>Custo das Mercadorias Vendidas - CMV (R$)</label>
-                    <input type="number" id="cogs" step="0.01" required placeholder="Custo total anual">
+                    <label>Custo das Mercadorias Vendidas - CMV</label>
+                    <input type="text" id="cogs" inputmode="numeric" oninput="formatMoney(this)" placeholder="Automático ou Manual">
                 </div>
                 <div class="form-group">
-                    <label>Receita de Vendas Total (R$)</label>
-                    <input type="number" id="revenue" step="0.01" required placeholder="Receita total anual">
+                    <label>Receita de Vendas Total</label>
+                    <input type="text" id="revenue" inputmode="numeric" oninput="formatMoney(this)" placeholder="Automático ou Manual">
                 </div>
             </div>
         </div>
 
-        <button type="submit" class="btn-calc">Calcular Indicadores</button>
+        <button type="button" onclick="processCalculations()" class="btn-calc">Calcular Indicadores Disponíveis</button>
     </form>
 
     <hr style="margin: 40px 0; border-color: #e2e8f0;">
 
-    <div class="main-grid" id="resultsSection" style="display:none;">
+    <!-- Seção de Resultados (Inicialmente oculta) -->
+    <div class="main-grid result-container" id="resultsSection">
+        
+        <!-- Card Resultados Operacionais -->
         <div class="card">
             <h2>Indicadores de Resultado</h2>
             
-            <div class="result-item">
-                <span>Margem de Contribuição (Unitária):</span>
-                <span class="result-value highlight" id="res-mcu">R$ 0,00</span>
-            </div>
-            <div class="result-item">
-                <span>Margem de Contribuição (%):</span>
-                <span class="result-value" id="res-mc-percent">0%</span>
-            </div>
-            <div class="result-item">
-                <span>Ponto de Equilíbrio (Qtd):</span>
-                <span class="result-value" id="res-pe-qtd">0 un</span>
-            </div>
-            <div class="result-item">
-                <span>Ponto de Equilíbrio (Valor):</span>
-                <span class="result-value" id="res-pe-val">R$ 0,00</span>
-            </div>
-            <div class="result-item">
-                <span>Grau de Alavancagem Operacional (GAO):</span>
-                <span class="result-value" id="res-gao">1.0x</span>
-            </div>
-            <div class="result-item">
-                <span>Análise Marginal (Lucro Atual):</span>
-                <span class="result-value highlight" id="res-profit">R$ 0,00</span>
+            <!-- Caixa de erro específica -->
+            <div id="error-operational" class="error-box"></div>
+            
+            <div id="content-operational" class="data-content">
+                <div class="result-item">
+                    <span>Margem de Contribuição (Unitária):</span>
+                    <span class="result-value highlight" id="res-mcu">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Margem de Contribuição (%):</span>
+                    <span class="result-value" id="res-mc-percent">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Ponto de Equilíbrio (Qtd):</span>
+                    <span class="result-value" id="res-pe-qtd">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Ponto de Equilíbrio (Valor):</span>
+                    <span class="result-value" id="res-pe-val">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Grau de Alavancagem (GAO):</span>
+                    <span class="result-value" id="res-gao">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Análise Marginal (Lucro Atual):</span>
+                    <span class="result-value highlight" id="res-profit">-</span>
+                </div>
             </div>
         </div>
 
+        <!-- Card Resultados Ciclos -->
         <div class="card">
             <h2>Indicadores de Ciclos (Prazos)</h2>
-            <div class="result-item">
-                <span>Prazo Médio de Estoque (PME):</span>
-                <span class="result-value" id="res-pme">0 dias</span>
+            
+            <!-- Caixa de erro específica -->
+            <div id="error-cycles" class="error-box"></div>
+
+            <div id="content-cycles" class="data-content">
+                <div class="result-item">
+                    <span>Prazo Médio de Estoque (PME):</span>
+                    <span class="result-value" id="res-pme">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Prazo Médio de Recebimento (PMR):</span>
+                    <span class="result-value" id="res-pmr">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Prazo Médio de Pagamento (PMP):</span>
+                    <span class="result-value" id="res-pmp">-</span>
+                </div>
+                <div class="result-item" style="border-top: 2px dashed #cbd5e1; margin-top:10px;">
+                    <span>Ciclo Operacional:</span>
+                    <span class="result-value" id="res-co">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Ciclo de Conversão de Caixa (CCC):</span>
+                    <span class="result-value highlight" id="res-ccc">-</span>
+                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
+                    *Cálculos baseados no ano comercial de 365 dias.
+                </p>
             </div>
-            <div class="result-item">
-                <span>Prazo Médio de Recebimento (PMR):</span>
-                <span class="result-value" id="res-pmr">0 dias</span>
-            </div>
-            <div class="result-item">
-                <span>Prazo Médio de Pagamento (PMP):</span>
-                <span class="result-value" id="res-pmp">0 dias</span>
-            </div>
-            <div class="result-item" style="border-top: 2px dashed #cbd5e1; margin-top:10px;">
-                <span>Ciclo Operacional:</span>
-                <span class="result-value" id="res-co">0 dias</span>
-            </div>
-            <div class="result-item">
-                <span>Ciclo de Conversão de Caixa (CCC):</span>
-                <span class="result-value highlight" id="res-ccc">0 dias</span>
-            </div>
-             <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
-                *CCC negativo indica que a empresa recebe antes de pagar (ótimo). CCC positivo indica necessidade de capital de giro.
-            </p>
         </div>
         
+        <!-- Card Gráfico -->
         <div class="card" style="grid-column: 1 / -1;">
             <h2>Análise Gráfica: Ponto de Equilíbrio</h2>
-            <div class="chart-container">
+            <div id="error-chart" class="error-box"></div>
+            <div class="chart-container" id="chart-wrapper">
                 <canvas id="beChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    let myChart = null;
-
-    function formatCurrency(value) {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-    }
-
-    function calculateAll(e) {
-        e.preventDefault();
-
-        // 1. Coletar Inputs
-        // Conversão para float
-        const price = parseFloat(document.getElementById('price').value);
-        const vc = parseFloat(document.getElementById('vc').value);
-        const fc = parseFloat(document.getElementById('fc').value);
-        const quantity = parseFloat(document.getElementById('quantity').value);
-
-        const inventory = parseFloat(document.getElementById('inventory').value);
-        const receivables = parseFloat(document.getElementById('receivables').value);
-        const payables = parseFloat(document.getElementById('payables').value);
-        const cogs = parseFloat(document.getElementById('cogs').value);
-        const revenue = parseFloat(document.getElementById('revenue').value);
-
-        // Validação simples para evitar divisão por zero
-        if(cogs === 0 || revenue === 0) {
-            alert("CMV e Receita não podem ser zero para calcular os ciclos.");
-            return;
-        }
-
-        // 2. Cálculos de Resultado
-        const mcu = price - vc; // Margem de Contribuição Unitária
-        const mcPercent = (mcu / price) * 100; // Margem %
-        const peQtd = fc / mcu; // Ponto de Equilibrio (Qtd)
-        const peVal = peQtd * price; // Ponto de Equilibrio (R$)
-        
-        // Lucro Operacional (EBIT) Atual
-        const ebit = (quantity * mcu) - fc;
-
-        // Grau de Alavancagem Operacional (GAO)
-        // Fórmula: Margem de Contribuição Total / EBIT
-        const totalMC = quantity * mcu;
-        let gao = 0;
-        if(ebit !== 0) {
-            gao = totalMC / ebit;
-        }
-
-        // 3. Cálculos de Ciclos (Base 360 ou 365 dias - usando 365 padrão)
-        const days = 365;
-        
-        // PME (Prazo Médio Estoque) = (Estoque / CMV) * 365
-        const pme = (inventory / cogs) * days;
-        
-        // PMR (Prazo Médio Recebimento) = (Recebíveis / Receita) * 365
-        const pmr = (receivables / revenue) * days;
-        
-        // PMP (Prazo Médio Pagamento) = (Fornecedores / CMV) * 365
-        // Nota: Algumas literaturas usam "Compras" em vez de CMV. CMV é um proxy comum.
-        const pmp = (payables / cogs) * days;
-
-        const cicloOperacional = pme + pmr;
-        const cicloCaixa = cicloOperacional - pmp;
-
-        // 4. Exibir Resultados
-        document.getElementById('resultsSection').style.display = 'grid';
-
-        document.getElementById('res-mcu').innerText = formatCurrency(mcu);
-        document.getElementById('res-mc-percent').innerText = mcPercent.toFixed(2) + '%';
-        document.getElementById('res-pe-qtd').innerText = Math.ceil(peQtd) + ' unidades';
-        document.getElementById('res-pe-val').innerText = formatCurrency(peVal);
-        document.getElementById('res-gao').innerText = gao.toFixed(2) + 'x';
-        
-        const profitEl = document.getElementById('res-profit');
-        profitEl.innerText = formatCurrency(ebit);
-        profitEl.style.color = ebit >= 0 ? 'var(--accent)' : '#ef4444';
-
-        document.getElementById('res-pme').innerText = Math.round(pme) + ' dias';
-        document.getElementById('res-pmr').innerText = Math.round(pmr) + ' dias';
-        document.getElementById('res-pmp').innerText = Math.round(pmp) + ' dias';
-        document.getElementById('res-co').innerText = Math.round(cicloOperacional) + ' dias';
-        
-        const cccEl = document.getElementById('res-ccc');
-        cccEl.innerText = Math.round(cicloCaixa) + ' dias';
-        // Se ciclo de caixa for negativo, é "verde" (bom), se positivo e alto, alerta.
-        cccEl.className = cicloCaixa <= 0 ? 'result-value highlight' : 'result-value warning';
-
-        // 5. Gerar Gráfico
-        renderChart(price, vc, fc, quantity, peQtd);
-    }
-
-    function renderChart(price, vc, fc, currentQtd, breakEvenQtd) {
-        const ctx = document.getElementById('beChart').getContext('2d');
-        
-        // Definir range do gráfico (de 0 até 1.5x a quantidade atual ou o PE)
-        const maxQtd = Math.max(currentQtd, breakEvenQtd) * 1.5;
-        const step = maxQtd / 10;
-        
-        let labels = [];
-        let totalCostsData = [];
-        let revenueData = [];
-
-        for(let i = 0; i <= maxQtd; i += step) {
-            let q = Math.round(i);
-            labels.push(q);
-            revenueData.push(q * price);
-            totalCostsData.push(fc + (q * vc));
-        }
-
-        if(myChart) {
-            myChart.destroy();
-        }
-
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Receita Total',
-                        data: revenueData,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        fill: false
-                    },
-                    {
-                        label: 'Custos Totais (Fixo + Var)',
-                        data: totalCostsData,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 2,
-                        fill: false
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Gráfico de Ponto de Equilíbrio (Receita vs Custos)'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-</script>
+<script src="js/script.js"></script>
 
 </body>
 </html>
