@@ -76,12 +76,12 @@
                             placeholder="R$ 0,00">
                     </div>
                     <div class="form-group">
-                        <label>Contas a Receber (Médio)</label>
+                        <label>Contas a Receber</label>
                         <input type="text" id="contasReceberMedio" inputmode="numeric"
                             oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                     </div>
                     <div class="form-group">
-                        <label>Fornecedores (Médio)</label>
+                        <label>Contas a Pagar</label>
                         <input type="text" id="fornecedoresMedio" inputmode="numeric"
                             oninput="formatarMoedaAoDigitar(this)" placeholder="R$ 0,00">
                     </div>
@@ -108,8 +108,8 @@
                             </svg>
                             3. Balanço & Resultados
                         </div>
-                        <button type="button" onclick="estimarDadosFinanceiros()" class="botao-pequeno"
-                            title="Estima valores com base nos dados anteriores">
+                        <button type="button" onclick="abrirModalEstimativa()" class="botao-pequeno"
+                            title="Abre assistente de estimativa precisa">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
@@ -204,7 +204,7 @@
                         <span class="valor-resultado" id="resultadoPrazoMedioEstocagem">-</span>
                     </div>
                     <div class="item-resultado">
-                        <span>Prazo Médio Recebim.:</span>
+                        <span>Prazo Médio Recebimento:</span>
                         <span class="valor-resultado" id="resultadoPrazoMedioRecebimento">-</span>
                     </div>
                     <div class="item-resultado">
@@ -264,6 +264,56 @@
                 <div class="container-grafico" id="containerGrafico">
                     <canvas id="graficoPontoEquilibrio"></canvas>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ESTIMATIVA -->
+    <div class="modal-overlay" id="modalEstimativa">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Estimativa de Precisão</h3>
+                <p>Informe dados complementares para refinar o balanço.</p>
+            </div>
+
+            <div class="modal-body">
+                <!-- Ativos e Passivos Extras -->
+                <div class="form-group">
+                    <label>Caixa e Equivalentes (R$)</label>
+                    <input type="text" id="modalCaixa" inputmode="numeric" oninput="formatarMoedaAoDigitar(this)"
+                        placeholder="R$ 0,00">
+                </div>
+                <div class="form-group">
+                    <label>Ativo Não Circulante (R$)</label>
+                    <input type="text" id="modalAtivoNaoCirculante" inputmode="numeric"
+                        oninput="formatarMoedaAoDigitar(this)" placeholder="Imobilizado, etc">
+                </div>
+                <div class="form-group">
+                    <label>Passivo Não Circulante (R$)</label>
+                    <input type="text" id="modalPassivoNaoCirculante" inputmode="numeric"
+                        oninput="formatarMoedaAoDigitar(this)" placeholder="Longo Prazo">
+                </div>
+
+                <!-- DRE Extras -->
+                <div class="form-group">
+                    <label>Despesas Financeiras (R$)</label>
+                    <input type="text" id="modalDespesasFinanceiras" inputmode="numeric"
+                        oninput="formatarMoedaAoDigitar(this)" placeholder="Juros líquidos">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Alíquota de Imposto Estimada (%)</label>
+                    <input type="number" id="modalAliquotaImposto" placeholder="Ex: 34 (IR + CSLL)"
+                        style="text-align: right;">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="estimarSemDados()" class="btn-modal-secondary">
+                    Não informar
+                </button>
+                <button onclick="calcularEstimativaPrecisa()" class="btn-modal-primary">
+                    Confirmar com Precisão
+                </button>
             </div>
         </div>
     </div>

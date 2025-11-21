@@ -1,45 +1,91 @@
 let instanciaGrafico = null;
 
-// --- FUNÇÕES DE INTERAÇÃO ---
+// --- FUNÇÕES DO MODAL ---
 
-// Função Wrapper para adicionar o delay de "processamento"
-function iniciarCalculoComAnimacao() {
-    const btn = document.getElementById('btnCalcular');
-    const btnText = btn.querySelector('.btn-text');
-    
-    // Estado de Loading
-    btn.classList.add('loading');
-    btnText.innerText = "Processando Análise...";
-
-    // Simula tempo de processamento (600ms) para efeito visual
-    setTimeout(() => {
-        processarTodosCalculosContabeis();
-        
-        // Restaura botão
-        btn.classList.remove('loading');
-        btnText.innerText = "Atualizar Dashboard";
-    }, 600);
+function abrirModalEstimativa() {
+    const modal = document.getElementById('modalEstimativa');
+    modal.classList.add('ativo');
 }
 
-// --- FUNÇÕES DE AUTO-PREENCHIMENTO ---
-function preencherAutomaticamenteDadosOperacionais() {
+function fecharModalEstimativa() {
+    const modal = document.getElementById('modalEstimativa');
+    modal.classList.remove('ativo');
+}
+
+// Fecha modal ao clicar fora
+document.getElementById('modalEstimativa').addEventListener('click', function(e) {
+    if (e.target === this) {
+        fecharModalEstimativa();
+    }
+});
+
+function estimarSemDados() {
+    // Executa a lógica antiga (estimativa grosseira)
+    executarLogicaEstimativaPadrao();
+    fecharModalEstimativa();
+}
+
+function calcularEstimativaPrecisa() {
+    // Lógica refinada usando os inputs do modal
+    
+    // 1. Dados Operacionais base (já preenchidos na tela principal)
+    const estoque = obterValorCampo('estoqueMedio') || 0;
+    const contasReceber = obterValorCampo('contasReceberMedio') || 0;
+    const fornecedores = obterValorCampo('fornecedoresMedio') || 0;
+
+    // 2. Dados do Modal
+    const caixa = obterValorCampo('modalCaixa') || 0;
+    const ativoNaoCirculante = obterValorCampo('modalAtivoNaoCirculante') || 0;
+    const passivoNaoCirculante = obterValorCampo('modalPassivoNaoCirculante') || 0;
+    const despesasFinanceiras = obterValorCampo('modalDespesasFinanceiras') || 0;
+    const aliquotaImposto = document.getElementById('modalAliquotaImposto').value || 0; // %
+
+    // 3. Calcular Balanço Preciso
+    const ativoCirculante = estoque + contasReceber + caixa;
+    const passivoCirculante = fornecedores; // Poderia adicionar "Outros PC" se quisesse
+    const ativoTotal = ativoCirculante + ativoNaoCirculante;
+    const passivoTotal = passivoCirculante + passivoNaoCirculante;
+    
+    // PL = Ativo Total - Passivo Total
+    const patrimonioLiquido = ativoTotal - passivoTotal;
+
+    // 4. Calcular DRE Preciso
+    // Primeiro precisamos recalcular o EBIT baseado nos inputs da tela principal
     const precoVenda = obterValorCampo('precoVendaUnitario');
     const custoVariavel = obterValorCampo('custoVariavelUnitario');
+    const custoFixo = obterValorCampo('custosFixosTotais');
     const quantidade = obterValorCampo('quantidadeVendida');
+    
+    let lucroLiquido = 0;
 
-    if (precoVenda === null || custoVariavel === null || quantidade === null) {
-        alert("Por favor, preencha o Preço de Venda, Custo Variável e Quantidade na seção 'Dados Operacionais' primeiro.");
-        return;
+    if (precoVenda !== null && custoVariavel !== null && custoFixo !== null && quantidade !== null) {
+        const margemContribuicaoUnitario = precoVenda - custoVariavel;
+        const ebit = (quantidade * margemContribuicaoUnitario) - custoFixo;
+        
+        // Lucro Antes do IR (LAIR) = EBIT - Desp. Fin.
+        const lair = ebit - despesasFinanceiras;
+        
+        // Lucro Líquido = LAIR * (1 - taxa)
+        let impostoCalculado = 0;
+        if (lair > 0) {
+            impostoCalculado = lair * (aliquotaImposto / 100);
+        }
+
+        lucroLiquido = lair - impostoCalculado;
     }
 
-    const receitaTotalCalculada = precoVenda * quantidade;
-    const custoMercadoriasVendidasCalculado = custoVariavel * quantidade; 
+    // 5. Preencher na tela
+    definirValorCampo('ativoCirculante', ativoCirculante);
+    definirValorCampo('passivoCirculante', passivoCirculante);
+    definirValorCampo('ativoTotal', ativoTotal);
+    definirValorCampo('patrimonioLiquido', patrimonioLiquido > 0 ? patrimonioLiquido : 0);
+    definirValorCampo('lucroLiquido', lucroLiquido);
 
-    definirValorCampo('receitaTotalAnual', receitaTotalCalculada);
-    definirValorCampo('custoMercadoriasVendidas', custoMercadoriasVendidasCalculado);
+    fecharModalEstimativa();
 }
 
-function estimarDadosFinanceiros() {
+// Esta é a lógica antiga renomeada
+function executarLogicaEstimativaPadrao() {
     const estoque = obterValorCampo('estoqueMedio') || 0;
     const contasReceber = obterValorCampo('contasReceberMedio') || 0;
     const fornecedores = obterValorCampo('fornecedoresMedio') || 0;
@@ -70,8 +116,41 @@ function estimarDadosFinanceiros() {
             const patrimonioLiquidoEstimado = ativoTotalEstimado - passivoCirculanteEstimado;
             definirValorCampo('patrimonioLiquido', patrimonioLiquidoEstimado > 0 ? patrimonioLiquidoEstimado : 0);
     }
+}
+
+
+// --- FUNÇÕES DE INTERAÇÃO DA PÁGINA PRINCIPAL ---
+
+function iniciarCalculoComAnimacao() {
+    const btn = document.getElementById('btnCalcular');
+    const btnText = btn.querySelector('.btn-text');
     
-    alert("Valores estimados! Ajuste conforme necessário para maior precisão.");
+    btn.classList.add('loading');
+    btnText.innerText = "Processando Análise...";
+
+    setTimeout(() => {
+        processarTodosCalculosContabeis();
+        btn.classList.remove('loading');
+        btnText.innerText = "Atualizar Dashboard";
+    }, 600);
+}
+
+// --- FUNÇÕES DE AUTO-PREENCHIMENTO ---
+function preencherAutomaticamenteDadosOperacionais() {
+    const precoVenda = obterValorCampo('precoVendaUnitario');
+    const custoVariavel = obterValorCampo('custoVariavelUnitario');
+    const quantidade = obterValorCampo('quantidadeVendida');
+
+    if (precoVenda === null || custoVariavel === null || quantidade === null) {
+        alert("Por favor, preencha o Preço de Venda, Custo Variável e Quantidade na seção 'Dados Operacionais' primeiro.");
+        return;
+    }
+
+    const receitaTotalCalculada = precoVenda * quantidade;
+    const custoMercadoriasVendidasCalculado = custoVariavel * quantidade; 
+
+    definirValorCampo('receitaTotalAnual', receitaTotalCalculada);
+    definirValorCampo('custoMercadoriasVendidas', custoMercadoriasVendidasCalculado);
 }
 
 // --- FUNÇÕES AUXILIARES ---
@@ -91,7 +170,6 @@ function definirValorCampo(idElemento, valorNumerico) {
     elementoInput.value = valorNumerico.toFixed(2).replace('.', ',');
     formatarMoedaAoDigitar(elementoInput);
     
-    // Pequeno flash visual para indicar mudança
     elementoInput.style.transition = 'none';
     elementoInput.style.backgroundColor = '#ecfdf5';
     setTimeout(() => {
@@ -158,7 +236,7 @@ function animarResultadosEmCascata() {
             itensTexto.forEach((item, i) => {
                 setTimeout(() => {
                     item.classList.add('item-resultado-animado');
-                }, i * 80); // Delay mais rápido entre linhas
+                }, i * 80);
             });
 
             const grafico = card.querySelector('.container-grafico');
@@ -170,7 +248,7 @@ function animarResultadosEmCascata() {
 
         }, delayGlobal);
 
-        delayGlobal += 250; // Delay mais rápido entre cards
+        delayGlobal += 250;
     });
 }
 
@@ -365,7 +443,6 @@ function renderizarGraficoPontoEquilibrio(precoVenda, custoVariavel, custosFixos
 
     if(instanciaGrafico) instanciaGrafico.destroy();
 
-    // Degradê para o gráfico
     const gradienteReceita = contextoCanvas.createLinearGradient(0, 0, 0, 400);
     gradienteReceita.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
     gradienteReceita.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
@@ -386,7 +463,7 @@ function renderizarGraficoPontoEquilibrio(precoVenda, custoVariavel, custosFixos
                     backgroundColor: gradienteReceita,
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.3, // Curva suave
+                    tension: 0.3,
                     pointRadius: 0,
                     pointHoverRadius: 6
                 },
